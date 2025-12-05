@@ -73,11 +73,8 @@ Test {func} Error
 """.lstrip()
 
 def _find_req_id(func_name: str, design_text: Optional[str]) -> str:
-    """Simple heuristic to find a REQ-ID linked to a function name in design docs."""
     if not design_text:
         return "N/A"
-    # Looking for patterns like "REQ-123: func_name" or "REQ-123 ... func_name"
-    # This is a basic match; usually you'd parse the markdown structure strictly.
     for line in design_text.splitlines():
         if func_name in line and "REQ-" in line:
             match = re.search(r"(REQ-\d+)", line)
@@ -86,7 +83,6 @@ def _find_req_id(func_name: str, design_text: Optional[str]) -> str:
     return "N/A"
 
 def _generate_arg_values(arg_names: List[str], annotations: dict) -> List[str]:
-    """Generate a list of default values."""
     values = []
     for arg in arg_names:
         hint = annotations.get(arg, "").lower()
@@ -103,7 +99,6 @@ def _generate_arg_values(arg_names: List[str], annotations: dict) -> List[str]:
 def rule_based_skeleton(fn: FunctionInfo, rel_path: str, design_text: Optional[str], framework: str) -> str:
     req_id = _find_req_id(fn.name, design_text)
     
-    # Arg preparation
     explicit_args = fn.args
     is_method = "." in fn.qualname and explicit_args and explicit_args[0] == "self"
     if is_method:
@@ -113,26 +108,9 @@ def rule_based_skeleton(fn: FunctionInfo, rel_path: str, design_text: Optional[s
     argc = len(explicit_args)
 
     if framework == "robot":
-        # Robot Framework Logic
-        # Library path needs to be the path to the python file
-        # Robot args are space separated. 'x' becomes x (no quotes usually needed unless string)
-        # For simplicity in this skeleton, we use the string repr but replace commas
-        
-        # Calculate library path (relative path to .py file)
-        # Note: Robot Library import usually requires strict paths or PYTHONPATH
         library_path = str(Path(rel_path) / f"{fn.module.split('.')[-1]}.py")
-        
-        # Call signature
-        if "." in fn.qualname:
-            # Class method: In Robot, standard Library import makes methods available as keywords
-            # if the class is the module or instantiated. 
-            # Simplified assumption: The module is a library.
-            func_call = fn.name
-        else:
-            func_call = fn.name
-
+        func_call = fn.name
         robot_args = "    ".join(val_list)
-        # Bad args: Create a list of 'None' separated by 4 spaces
         robot_bad_args = "    ".join(["${None}"] * argc)
         
         return SKELETON_ROBOT.format(
@@ -146,7 +124,6 @@ def rule_based_skeleton(fn: FunctionInfo, rel_path: str, design_text: Optional[s
         )
 
     else:
-        # Pytest Logic
         path_block = PATH_SETUP_PY.format(rel_path=rel_path)
         call_args = ", ".join(val_list)
         
@@ -167,15 +144,19 @@ def generate_for_function(fn: FunctionInfo, design_text: Optional[str], provider
     if provider.provider:
         prompt = build_prompt(fn, design_text, framework)
         code = provider.generate(prompt)
-        # Basic validation
+        
         if code:
+            clean_code = sanitize(code)
+            
             if framework == "pytest":
-                if compiles(code) and safe_content(code):
-                    return sanitize(code)
+                if compiles(clean_code) and safe_content(clean_code):
+                    # CRITICAL FIX: Prepend the sys.path setup to the AI-generated code
+                    path_block = PATH_SETUP_PY.format(rel_path=rel_path)
+                    return f"{path_block}\n\n{clean_code}"
             else:
-                # Basic safety check for Robot (no exec usage)
-                if safe_content(code):
-                    return sanitize(code)
+                # Basic check for Robot
+                if safe_content(clean_code):
+                    return clean_code
     
     return rule_based_skeleton(fn, rel_path, design_text, framework)
 
@@ -184,7 +165,6 @@ def write_tests(funcs: List[FunctionInfo], out_dir: str, src_dir: str, design_te
     out.mkdir(parents=True, exist_ok=True)
     provider = LLMProvider()
     
-    # Calculate relative path from OUT to SRC
     try:
         rel_path = os.path.relpath(Path(src_dir).resolve(), Path(out_dir).resolve())
     except Exception:

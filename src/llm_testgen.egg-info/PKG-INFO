@@ -1,0 +1,65 @@
+Metadata-Version: 2.4
+Name: llm-testgen
+Version: 0.1.0
+Summary: Generate unit/integration test skeletons from code/design docs using LLMs, with safe fallbacks.
+Author: Your Name
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: jinja2>=3.1.3
+Dynamic: license-file
+
+# LLM TestGen
+
+Generate meaningful unit and integration **test skeletons** from source code and design docs using LLMs — with **safe, offline fallbacks** when no model is available.
+
+## Why this project?
+- Boost testing productivity: turn functions and docs into runnable pytest stubs.
+- Ship safely: compile checks, guardrails, and no-secrets scanning.
+- Research-ready: measure compile rate, execution success, coverage delta, and mutation score.
+
+## Quick start
+```bash
+# Install (editable)
+pip install -e .
+
+# See help
+llm-testgen --help
+
+# Generate tests for an example project (no LLM required)
+llm-testgen generate   --src examples/src_project   --out tests_generated   --design examples/design/requirements.md
+
+# Evaluate compile success (dry-run)
+llm-testgen evaluate --tests tests_generated
+```
+
+## Commands
+- `scan`: list functions discovered via AST.
+- `generate`: create pytest files from code + optional design docs (LLM if configured, else safe fallback).
+- `evaluate`: basic checks (compiles, file count, lines generated) and produce a JSON metrics report.
+
+## Configure an LLM (optional)
+Set env vars and the provider name. Example:
+```
+export LLM_PROVIDER=openai
+export OPENAI_API_KEY=sk-...
+
+# or for local models via ollama:
+export LLM_PROVIDER=ollama
+export OLLAMA_MODEL=codellama:7b
+```
+If not set, the generator uses a rule‑based fallback with solid test skeletons.
+
+## Ethical & Safety Notes
+- The generator **never** exports environment variables or secrets into tests.
+- It avoids network/file I/O in generated tests by default and flags suspicious code.
+- Please verify license compatibility when generating from proprietary code bases.
+
+## Research Metrics
+- **Compile rate**: % of generated test files that parse.
+- **Execution success**: % tests that run without errors (when you run pytest).
+- **Coverage delta**: coverage before vs. after generation.
+- **Mutation score** (optional): using tools like `mutmut` or `mutatest`.
+
+## Example
+The repository includes a tiny example module in `examples/src_project/example_module.py`.

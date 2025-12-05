@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-testgen"
+version = "0.1.0"
+description = "Generate unit/integration test skeletons from code/design docs using LLMs, with safe fallbacks."
+authors = [{name="Your Name"}]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["jinja2>=3.1.3"]
+
+[project.scripts]
+llm-testgen = "llm_testgen.cli:main"
+
+# 👇 these two sections are crucial for src/ layout
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["llm_testgen*"]

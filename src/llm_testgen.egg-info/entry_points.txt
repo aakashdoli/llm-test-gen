@@ -1,0 +1,2 @@
+[console_scripts]
+llm-testgen = llm_testgen.cli:main

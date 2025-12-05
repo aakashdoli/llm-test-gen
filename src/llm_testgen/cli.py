@@ -12,13 +12,14 @@ def main():
     p_scan = sub.add_parser("scan", help="Scan for functions")
     p_scan.add_argument("--src", required=True, help="Source directory")
 
-    p_gen = sub.add_parser("generate", help="Generate test files")
+    p_gen = sub.add_parser("generate", help="Generate pytest files")
     p_gen.add_argument("--src", required=True, help="Source directory to analyze")
     p_gen.add_argument("--out", required=True, help="Output directory for tests")
     p_gen.add_argument("--design", help="Optional design/requirements markdown file")
+    # Added framework argument back if it was missing in your version
     p_gen.add_argument("--framework", choices=["pytest", "robot"], default="pytest", help="Target test framework (default: pytest)")
 
-    p_eval = sub.add_parser("evaluate", help="Evaluate generated tests and traceability")
+    p_eval = sub.add_parser("evaluate", help="Evaluate compile success of generated tests")
     p_eval.add_argument("--tests", required=True, help="Directory containing generated tests")
     p_eval.add_argument("--out", default="metrics.json", help="Path to write JSON metrics")
 
@@ -35,12 +36,19 @@ def main():
         if args.design and Path(args.design).exists():
             design_text = Path(args.design).read_text(encoding="utf-8")
         funcs = scan_python_functions(args.src)
-        # Pass src_dir and framework preference
-        count = write_tests(funcs, args.out, args.src, design_text, framework=args.framework)
-        print(f"Generated {count} {args.framework} file(s) in {args.out}")
+        
+        # Ensure we capture the framework argument safely
+        framework = getattr(args, 'framework', 'pytest')
+        
+        count = write_tests(funcs, args.out, args.src, design_text, framework=framework)
+        print(f"Generated {count} {framework} file(s) in {args.out}")
         return
 
     if args.cmd == "evaluate":
         metrics = write_report(args.tests, args.out)
         print(f"Wrote metrics to {args.out}: {metrics}")
         return
+
+# --- THIS WAS MISSING ---
+if __name__ == "__main__":
+    main()

@@ -1,3 +1,5 @@
 pytest
 pytest-cov
 jinja2
+google-generativeai  
+streamlit            

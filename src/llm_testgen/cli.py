@@ -12,12 +12,13 @@ def main():
     p_scan = sub.add_parser("scan", help="Scan for functions")
     p_scan.add_argument("--src", required=True, help="Source directory")
 
-    p_gen = sub.add_parser("generate", help="Generate pytest files")
+    p_gen = sub.add_parser("generate", help="Generate test files")
     p_gen.add_argument("--src", required=True, help="Source directory to analyze")
     p_gen.add_argument("--out", required=True, help="Output directory for tests")
     p_gen.add_argument("--design", help="Optional design/requirements markdown file")
+    p_gen.add_argument("--framework", choices=["pytest", "robot"], default="pytest", help="Target test framework (default: pytest)")
 
-    p_eval = sub.add_parser("evaluate", help="Evaluate compile success of generated tests")
+    p_eval = sub.add_parser("evaluate", help="Evaluate generated tests and traceability")
     p_eval.add_argument("--tests", required=True, help="Directory containing generated tests")
     p_eval.add_argument("--out", default="metrics.json", help="Path to write JSON metrics")
 
@@ -34,8 +35,9 @@ def main():
         if args.design and Path(args.design).exists():
             design_text = Path(args.design).read_text(encoding="utf-8")
         funcs = scan_python_functions(args.src)
-        count = write_tests(funcs, args.out, design_text)
-        print(f"Generated {count} test file(s) in {args.out}")
+        # Pass src_dir and framework preference
+        count = write_tests(funcs, args.out, args.src, design_text, framework=args.framework)
+        print(f"Generated {count} {args.framework} file(s) in {args.out}")
         return
 
     if args.cmd == "evaluate":

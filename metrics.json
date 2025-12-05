@@ -1,4 +1,12 @@
 {
-  "files": 1,
-  "compile_success": 1
+  "files_total": 1,
+  "files_python": 0,
+  "files_robot": 1,
+  "compile_success": 1,
+  "traceability_unique_reqs": 3,
+  "req_ids": [
+    "REQ-101",
+    "REQ-102",
+    "REQ-103"
+  ]
 }

@@ -1,93 +1,97 @@
-# LLM Test Generator (llm-test-gen)
+# llm-test-gen
 
-Generate pytest skeleton tests for Python projects using LLMs.
-Includes a CLI and an optional Streamlit UI.
+CLI + Streamlit UI to scan Python code and generate pytest skeleton tests using LLMs (Gemini or OpenAI).
 
-## Features
+## What it does
+- `scan`: find functions/classes in a source directory
+- `generate`: create pytest skeleton tests for discovered functions
+- `evaluate`: basic evaluation report for generated tests
+- **Optional Streamlit UI**: upload a ZIP project and generate tests via a web interface
 
-- **Scan**: Recursively scan Python source files for functions and methods.
-- **Generate**: Create pytest skeleton tests using an LLM (requires API key).
-- **Evaluate**: Run generated tests and report success/failure metrics.
-- **UI**: Optional Streamlit interface for easy interaction.
-
-## Installation
-
+## Install (recommended)
 ```bash
-# Create and activate virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade pip
 
-# Install package (editable mode recommended for development)
 pip install -e .
+```
 
-# Install with UI dependencies if you plan to use the Streamlit app
+## Configure LLM provider
+
+**Gemini:**
+```bash
+export GEMINI_API_KEY="..."
+export LLM_PROVIDER="gemini"
+```
+
+**OpenAI:**
+```bash
+export OPENAI_API_KEY="..."
+export LLM_PROVIDER="openai"
+```
+
+## CLI usage
+
+### Scan (summary by default)
+```bash
+llm-testgen scan --src path/to/project
+```
+
+**Ignore extra directories:**
+```bash
+llm-testgen scan --src path/to/project --ignore "tests,docs"
+```
+
+**Verbose mode (prints every discovered function):**
+```bash
+llm-testgen scan --src path/to/project --verbose
+```
+
+### Generate tests
+```bash
+llm-testgen generate --src path/to/project --out generated_tests
+```
+
+**With design/requirements context:**
+```bash
+llm-testgen generate --src path/to/project --out generated_tests --design examples/design/requirements.md
+```
+
+**Ignore directories during generation:**
+```bash
+llm-testgen generate --src path/to/project --out generated_tests --ignore "tests,docs"
+```
+
+### Evaluate
+```bash
+llm-testgen evaluate --tests generated_tests --out metrics.json
+```
+
+## Streamlit UI (optional)
+
+**Install UI dependencies:**
+```bash
 pip install -e ".[ui]"
-
-# Install dev dependencies for running tests
-pip install -e ".[dev]"
 ```
 
-## CLI Usage
-
-The `llm-testgen` command is the main entry point.
-
-### 1. Scan for functions
-
-Scans the source directory and lists discovered functions.
-
-```bash
-llm-testgen scan --src <source_directory>
-```
-
-**Options:**
-- `--ignore`: Comma-separated list of directories to exclude (default includes `.venv`, `venv`, `node_modules`, `dist`, `build`, `__pycache__`, `.git`).
-- `--verbose`: Print every discovered function signature. Default is a summary view.
-
-**Examples:**
-```bash
-# Default summary view
-llm-testgen scan --src .
-
-# Full list of functions
-llm-testgen scan --src . --verbose
-
-# Ignore specific folders
-llm-testgen scan --src . --ignore "tests,legacy_code"
-```
-
-### 2. Generate tests
-
-Generates pytest files based on the scanned functions and optional design documents.
-
-```bash
-llm-testgen generate --src <source_directory> --out <output_directory> --design <path_to_requirements.md>
-```
-
-**Options:**
-- `--provider`: LLM provider to use (default: `google`).
-- `--model`: Model name (default: `gemini-pro`).
-- `--ignore`: Comma-separated list of directories to exclude.
-
-**Note**: You must set the appropriate API key environment variable (e.g., `GOOGLE_API_KEY`) before running.
-
-### 3. Evaluate tests
-
-Runs the generated tests using `pytest` and reports the results.
-
-```bash
-llm-testgen evaluate --test-dir <output_directory>
-```
-
-## Streamlit UI
-
-For a visual interface, use the Streamlit app:
-
+**Run:**
 ```bash
 streamlit run ui/app.py
 ```
 
-The UI allows you to:
-1.  Upload a ZIP file of your project.
-2.  Scan for functions.
-3.  Generate tests using an LLM.
-4.  Download the generated test suite.
+## Project structure
+
+- `src/llm_testgen/`: core library + CLI
+- `ui/app.py`: Streamlit UI
+- `tests/`: automated tests
+- `examples/`: small demo inputs and design docs
+- `examples/_playground/`: experimental sandbox code (not required)
+
+## Development
+
+**Run tests:**
+```bash
+pip install -e ".[dev]"
+pytest -q
+```

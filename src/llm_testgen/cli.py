@@ -11,6 +11,7 @@ def main():
 
     p_scan = sub.add_parser("scan", help="Scan for functions")
     p_scan.add_argument("--src", required=True, help="Source directory")
+    p_scan.add_argument("--ignore", help="Comma-separated list of directories to ignore", default="")
 
     p_gen = sub.add_parser("generate", help="Generate pytest files")
     p_gen.add_argument("--src", required=True, help="Source directory to analyze")
@@ -18,6 +19,7 @@ def main():
     p_gen.add_argument("--design", help="Optional design/requirements markdown file")
     # Added framework argument back if it was missing in your version
     p_gen.add_argument("--framework", choices=["pytest", "robot"], default="pytest", help="Target test framework (default: pytest)")
+    p_gen.add_argument("--ignore", help="Comma-separated list of directories to ignore", default="")
 
     p_eval = sub.add_parser("evaluate", help="Evaluate compile success of generated tests")
     p_eval.add_argument("--tests", required=True, help="Directory containing generated tests")
@@ -26,7 +28,8 @@ def main():
     args = parser.parse_args()
 
     if args.cmd == "scan":
-        funcs = scan_python_functions(args.src)
+        ignore_list = [x.strip() for x in args.ignore.split(",") if x.strip()]
+        funcs = scan_python_functions(args.src, ignore_patterns=ignore_list)
         for f in funcs:
             print(f"{f.module}:{f.qualname} args={f.args} returns={f.returns}")
         return
@@ -35,7 +38,9 @@ def main():
         design_text = None
         if args.design and Path(args.design).exists():
             design_text = Path(args.design).read_text(encoding="utf-8")
-        funcs = scan_python_functions(args.src)
+        
+        ignore_list = [x.strip() for x in args.ignore.split(",") if x.strip()]
+        funcs = scan_python_functions(args.src, ignore_patterns=ignore_list)
         
         # Ensure we capture the framework argument safely
         framework = getattr(args, 'framework', 'pytest')

@@ -2,6 +2,7 @@ from __future__ import annotations
 import ast
 from dataclasses import dataclass
 from pathlib import Path
+import sys
 from typing import List, Optional
 
 @dataclass
@@ -48,17 +49,41 @@ def _collect_functions(tree: ast.AST, module_name: str, rel_path: str) -> List[F
     Visitor().visit(tree)
     return found
 
-def scan_python_functions(src_dir: str) -> List[FunctionInfo]:
+DEFAULT_IGNORE_DIRS = {
+    "venv", ".venv", "env", ".env",
+    "node_modules", "dist", "build",
+    "__pycache__", ".git", ".github",
+    ".idea", ".vscode", "site-packages"
+}
+
+def scan_python_functions(src_dir: str, ignore_patterns: Optional[List[str]] = None) -> List[FunctionInfo]:
     base = Path(src_dir)
     results: List[FunctionInfo] = []
+    
+    # Merge defaults with user-provided ignores
+    ignores = set(DEFAULT_IGNORE_DIRS)
+    if ignore_patterns:
+        ignores.update(ignore_patterns)
+
     for path in base.rglob("*.py"):
-        if any(seg.startswith(".") for seg in path.parts):
+        # Check if any part of the path is in the ignore list
+        if any(part in ignores for part in path.parts):
             continue
+            
+        if any(seg.startswith(".") and seg not in ignores for seg in path.parts):
+            continue
+            
         rel = str(path.relative_to(base))
         module_name = rel.replace("/", ".").removesuffix(".py")
+        
         try:
-            tree = ast.parse(path.read_text(encoding="utf-8"))
+            content = path.read_text(encoding="utf-8")
+            tree = ast.parse(content)
+            results.extend(_collect_functions(tree, module_name, rel))
+        except RecursionError:
+            print(f"Warning: Skipped {rel} due to recursion depth (file too complex)", file=sys.stderr)
+            continue
         except Exception:
             continue
-        results.extend(_collect_functions(tree, module_name, rel))
+            
     return results

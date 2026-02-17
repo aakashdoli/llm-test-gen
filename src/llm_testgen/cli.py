@@ -12,6 +12,7 @@ def main():
     p_scan = sub.add_parser("scan", help="Scan for functions")
     p_scan.add_argument("--src", required=True, help="Source directory")
     p_scan.add_argument("--ignore", help="Comma-separated list of directories to ignore", default="")
+    p_scan.add_argument("--verbose", action="store_true", help="Print every discovered function (default: summary only)")
 
     p_gen = sub.add_parser("generate", help="Generate pytest files")
     p_gen.add_argument("--src", required=True, help="Source directory to analyze")
@@ -30,8 +31,22 @@ def main():
     if args.cmd == "scan":
         ignore_list = [x.strip() for x in args.ignore.split(",") if x.strip()]
         funcs = scan_python_functions(args.src, ignore_patterns=ignore_list)
-        for f in funcs:
-            print(f"{f.module}:{f.qualname} args={f.args} returns={f.returns}")
+
+        if args.verbose:
+            for f in funcs:
+                print(f"{f.module}:{f.qualname} args={f.args} returns={f.returns}")
+        else:
+            print(f"Scanned: {args.src}")
+            if ignore_list:
+                print(f"Ignored: {', '.join(ignore_list)}")
+            print(f"Functions found: {len(funcs)}")
+            # Optional: show first 20 only, to give a preview
+            preview = funcs[:20]
+            if preview:
+                print("Preview (first 20):")
+                for f in preview:
+                    print(f"- {f.module}:{f.qualname}")
+
         return
 
     if args.cmd == "generate":

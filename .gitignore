@@ -38,3 +38,15 @@ venv/
 __pycache__/
 build/
 dist/
+
+# Python caches
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# Local outputs
+metrics.json
+
+# Local workspaces (keep if you really want them in repo)
+temp_workspace/
+

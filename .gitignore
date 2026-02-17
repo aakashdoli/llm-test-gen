@@ -23,3 +23,18 @@ coverage.xml
 
 # Editor
 .vscode/
+
+# macOS
+.DS_Store
+
+# outputs
+metrics.json
+tests_gen/
+tests_robot/
+
+# venvs and common build
+.venv/
+venv/
+__pycache__/
+build/
+dist/
